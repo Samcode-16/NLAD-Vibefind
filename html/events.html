@@ -12,37 +12,9 @@
     <link rel="icon" href="../assets/images/logo.png" type="image/png">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
-<body>
-    <header>
-        <div class="container">
-            <div class="logo">
-                <img src="../assets/images/logo.png" type="image/png" class="logo-img">
-                <h1>Vibefind</h1>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="events.html" class="active">Events</a></li>
-                    <li><a href="create-event.html">Create Event</a></li>
-                    <li><a href="my-events.html">My Events</a></li>
-                    <li><a href="about.html">About Us</a></li>
-                    <li><a href="contact.html">Contact</a></li>
-                </ul>
-            </nav>
-            <div class="auth-buttons">
-                <div class="profile-dropdown">
-                    <img src="../assets/images/default-profile.png" alt="Profile" id="profile-image">
-                    <div class="dropdown-content">
-                        <a href="profile.html"><i class="fas fa-user"></i> My Profile</a>
-                        <a href="wishlist.html"><i class="fas fa-heart"></i> Wishlist</a>
-                        <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                    </div>
-                </div>
-                <button id="login-btn" class="btn-secondary">Login</button>
-                <button id="signup-btn" class="btn-primary">Sign Up</button>
-            </div>
-        </div>
-    </header>
+<body class="with-fixed-header">
+    <div id="site-header"></div>
+    <script src="../js/include-header.js"></script>
 
     <main>
         <div class="container">
@@ -72,9 +44,9 @@
             <section class="filters">
                 <div class="filter-row">
                     <div class="search-bar">
-                        <input type="text" id="search-input" placeholder="Search events...">
+                        <input type="text" id="search-input" placeholder="Search events..." autocomplete="off">
+                        <div id="search-suggestions" class="search-suggestions" aria-live="polite"></div>
                         <button id="search-btn" class="material-icons">search</button>
-                        </button>
                     </div>
                 </div>
                 <div class="filter-row">

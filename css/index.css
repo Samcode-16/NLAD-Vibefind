@@ -26,6 +26,11 @@ body {
   background-color: var(--light-color);
 }
 
+/* Reserve space for a fixed header so content isn't hidden behind it. Adjust if header height changes. */
+body.with-fixed-header {
+  padding-top: 72px;
+}
+
 h1,
 h2,
 h3,
@@ -95,9 +100,12 @@ img {
 header {
   background-color: white;
   box-shadow: var(--box-shadow);
-  position: sticky;
+  /* Make header visually fixed so it stays at the top when scrolling */
+  position: fixed;
   top: 0;
-  z-index: 100;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
 
 header .container {

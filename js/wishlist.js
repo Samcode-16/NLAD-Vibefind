@@ -11,8 +11,8 @@ const confirmClearBtn = document.getElementById("confirm-clear-btn");
 const removeWishlistModal = document.getElementById("remove-wishlist-modal");
 const cancelRemoveBtn = document.getElementById("cancel-remove-btn");
 const confirmRemoveBtn = document.getElementById("confirm-remove-btn");
-const wishlistLoginBtn = document.getElementById("wishlist-login-btn");
-const wishlistSignupBtn = document.getElementById("wishlist-signup-btn");
+// wishlist login/signup buttons (may be present as fallbacks in markup)
+// Query these inside DOMContentLoaded to avoid timing issues with injected header
 
 // Current event ID to remove
 let currentRemoveEventId = null;
@@ -665,6 +665,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Wishlist login button
+  // Wishlist fallback login/signup buttons (if present in the page)
+  const wishlistLoginBtn = document.getElementById("wishlist-login-btn");
+  const wishlistSignupBtn = document.getElementById("wishlist-signup-btn");
+
   if (wishlistLoginBtn) {
     wishlistLoginBtn.addEventListener("click", () => {
       const loginModal = document.getElementById("login-modal");
@@ -674,7 +678,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Wishlist signup button
   if (wishlistSignupBtn) {
     wishlistSignupBtn.addEventListener("click", () => {
       const signupModal = document.getElementById("signup-modal");

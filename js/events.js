@@ -1,6 +1,4 @@
-// DOM Elements
-const loginBtn = document.getElementById("login-btn");
-const signupBtn = document.getElementById("signup-btn");
+// Header elements are injected dynamically; header interactions are bound in include-header.js
 const loginModal = document.getElementById("login-modal");
 const signupModal = document.getElementById("signup-modal");
 const closeButtons = document.querySelectorAll(".close");
@@ -8,9 +6,6 @@ const switchToSignup = document.getElementById("switch-to-signup");
 const switchToLogin = document.getElementById("switch-to-login");
 const loginForm = document.getElementById("login-form");
 const signupForm = document.getElementById("signup-form");
-const logoutBtn = document.getElementById("logout-btn");
-const profileDropdown = document.querySelector(".profile-dropdown");
-const authButtons = document.querySelectorAll("#login-btn, #signup-btn");
 
 // Events page specific elements
 const eventsGrid = document.getElementById("events-grid");
@@ -29,6 +24,7 @@ const filterBtn = document.getElementById("filter-btn");
 const clearFiltersBtn = document.getElementById("clear-filters");
 const featuredEventPopup = document.getElementById("featured-event-popup");
 const closePopupBtn = document.querySelector(".close-popup");
+const searchSuggestions = document.getElementById("search-suggestions");
 
 // CAPTCHA elements
 const captchaText = document.getElementById("captcha-text");
@@ -62,51 +58,65 @@ function generateCaptcha() {
 // Check if user is logged in
 function checkAuthStatus() {
   const user = JSON.parse(localStorage.getItem("currentUser"));
+  const authButtons = document.querySelectorAll('#login-btn, #signup-btn');
+  const profileDropdown = document.querySelector('.profile-dropdown');
+
   if (user) {
     // User is logged in
-    authButtons.forEach((btn) => (btn.style.display = "none"));
-    profileDropdown.style.display = "block";
+    if (authButtons && authButtons.length) authButtons.forEach((btn) => (btn.style.display = "none"));
+    if (profileDropdown) profileDropdown.style.display = "block";
 
     // Set profile image if exists
     const profileImage = document.getElementById("profile-image");
-    if (user.profileImage) {
+    if (profileImage && user.profileImage) {
       profileImage.src = user.profileImage;
     }
   } else {
     // User is not logged in
-    authButtons.forEach((btn) => (btn.style.display = "inline-block"));
-    profileDropdown.style.display = "none";
+    if (authButtons && authButtons.length) authButtons.forEach((btn) => (btn.style.display = "inline-block"));
+    if (profileDropdown) profileDropdown.style.display = "none";
   }
 }
 
-// Parse CSV data
+// Robust CSV parser that handles quoted fields and commas inside quotes
 function parseCSV(csv) {
-  const lines = csv.split("\n");
-  const headers = lines[0].split(",");
   const events = [];
 
+  // Split into lines while supporting different newline styles
+  const lines = csv.split(/\r?\n/).filter((l) => l.trim() !== "");
+  if (lines.length === 0) return events;
+
+  // Parse header
+  const headers = parseCSVLine(lines[0]);
   console.log("CSV Headers:", headers);
 
   for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const values = lines[i].split(",");
+    const line = lines[i];
+    const values = parseCSVLine(line);
+    if (values.length === 0) continue;
+
     const event = {};
     headers.forEach((header, index) => {
-      let value = values[index];
+      let value = values[index] !== undefined ? values[index] : "";
+      if (typeof value === "string") value = value.trim();
+
       if (header === "image") {
-        // Update image path to use correct relative path
-        value = value.replace("img/", "../assets/images/");
+        // Normalize image path from CSV like "img/name.jpg" to relative assets path
+        if (value) {
+          value = value.replace(/^\s*img\//i, "../assets/images/");
+          // If file extension is missing or path seems invalid, fallback to placeholder
+        } else {
+          value = "../assets/images/placeholder-event.jpg";
+        }
       }
-      // Ensure category is properly trimmed and preserved
+
       if (header === "category") {
         value = value.trim();
-        console.log("Parsed category:", {
-          original: values[index],
-          trimmed: value,
-        });
       }
+
       event[header] = value;
     });
+
     events.push(event);
   }
 
@@ -115,6 +125,40 @@ function parseCSV(csv) {
   console.log("Unique categories in data:", uniqueCategories);
 
   return events;
+}
+
+// Helper to parse a single CSV line into fields (handles quoted values)
+function parseCSVLine(line) {
+  const result = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    const nextChar = line[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped quote
+        current += '"';
+        i++; // skip next
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === ',' && !inQuotes) {
+      result.push(current);
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  result.push(current);
+  return result.map((s) => (s === undefined ? "" : s));
 }
 
 // Load all events
@@ -936,22 +980,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (captchaText) {
     generateCaptcha();
   }
+  // Initialize live search suggestions
+  initSearchSuggestions();
 });
 
-// Login button click
-if (loginBtn) {
-  loginBtn.addEventListener("click", () => {
-    openModal(loginModal);
-  });
-}
-
-// Signup button click
-if (signupBtn) {
-  signupBtn.addEventListener("click", () => {
-    openModal(signupModal);
-    generateCaptcha();
-  });
-}
+// Header login/signup buttons are handled centrally in include-header.js after the header is injected.
 
 // Close buttons
 closeButtons.forEach((button) => {
@@ -1096,16 +1129,7 @@ if (signupForm) {
   });
 }
 
-// Logout button click
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    localStorage.removeItem("currentUser");
-    checkAuthStatus();
-    showNotification("Logged out successfully!");
-    window.location.href = "index.html";
-  });
-}
+// Logout is handled centrally in include-header.js
 
 // Search button click
 if (searchBtn) {
@@ -1119,6 +1143,153 @@ if (searchInput) {
   searchInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
       applyFilters();
+    }
+  });
+}
+
+// Debounce helper
+function debounce(fn, wait) {
+  let t;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+
+// Build suggestion items (up to limit)
+function buildSuggestions(query, limit = 8) {
+  if (!query) return [];
+  const q = query.toLowerCase().trim();
+  const matches = allEvents
+    .map((e) => ({
+      id: e.id,
+      title: e.title || "",
+      location: e.location || "",
+      image: e.image || "../assets/images/placeholder-event.jpg",
+      score:
+        (e.title || "").toLowerCase().includes(q) * 3 +
+        (e.description || "").toLowerCase().includes(q) * 1 +
+        (e.location || "").toLowerCase().includes(q) * 0.5,
+    }))
+    .filter((m) => m.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  return matches;
+}
+
+// Render suggestion dropdown
+function showSuggestionsList(items) {
+  if (!searchSuggestions) return;
+  searchSuggestions.innerHTML = "";
+  if (!items || items.length === 0) {
+    searchSuggestions.classList.remove("open");
+    return;
+  }
+
+  items.forEach((it, idx) => {
+    const div = document.createElement("div");
+    div.className = "suggestion";
+    div.setAttribute("data-id", it.id);
+    div.setAttribute("data-idx", idx);
+    div.innerHTML = `
+      <img src="${it.image}" alt="${escapeHtml(it.title)}">
+      <div class="meta">
+        <div class="title">${escapeHtml(it.title)}</div>
+        <div class="subtitle">${escapeHtml(it.location)}</div>
+      </div>
+    `;
+
+    div.addEventListener("click", () => {
+      // Fill search input and apply filter for clicked suggestion
+      searchInput.value = it.title;
+      clearSuggestions();
+      applyFilters();
+    });
+
+    searchSuggestions.appendChild(div);
+  });
+
+  searchSuggestions.classList.add("open");
+}
+
+function clearSuggestions() {
+  if (!searchSuggestions) return;
+  searchSuggestions.innerHTML = "";
+  searchSuggestions.classList.remove("open");
+  activeSuggestionIndex = -1;
+}
+
+function escapeHtml(text) {
+  if (!text) return "";
+  return text.replace(/[&<>\"']/g, function (c) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[c];
+  });
+}
+
+let activeSuggestionIndex = -1;
+
+function highlightSuggestion(index) {
+  if (!searchSuggestions) return;
+  const items = searchSuggestions.querySelectorAll('.suggestion');
+  items.forEach((it) => it.classList.remove('active'));
+  if (index >= 0 && items[index]) {
+    items[index].classList.add('active');
+    items[index].scrollIntoView({ block: 'nearest' });
+    activeSuggestionIndex = index;
+  } else {
+    activeSuggestionIndex = -1;
+  }
+}
+
+function initSearchSuggestions() {
+  if (!searchInput) return;
+
+  const onInput = debounce(function (e) {
+    const q = e.target.value;
+    if (!q) {
+      clearSuggestions();
+      return;
+    }
+    const items = buildSuggestions(q, 8);
+    showSuggestionsList(items);
+  }, 180);
+
+  searchInput.addEventListener('input', onInput);
+
+  // keyboard navigation
+  searchInput.addEventListener('keydown', function (e) {
+    if (!searchSuggestions || !searchSuggestions.classList.contains('open')) return;
+    const items = searchSuggestions.querySelectorAll('.suggestion');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = Math.min(activeSuggestionIndex + 1, items.length - 1);
+      highlightSuggestion(next);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = Math.max(activeSuggestionIndex - 1, 0);
+      highlightSuggestion(prev);
+    } else if (e.key === 'Enter') {
+      if (activeSuggestionIndex >= 0 && items[activeSuggestionIndex]) {
+        e.preventDefault();
+        items[activeSuggestionIndex].click();
+      }
+    } else if (e.key === 'Escape') {
+      clearSuggestions();
+    }
+  });
+
+  // click outside to close
+  document.addEventListener('click', function (e) {
+    if (!searchSuggestions) return;
+    if (!searchSuggestions.contains(e.target) && e.target !== searchInput) {
+      clearSuggestions();
     }
   });
 }

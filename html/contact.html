@@ -10,37 +10,9 @@
     <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     <link rel="icon" href="../assets/images/logo.png" type="image/png">
 </head>
-<body>
-    <header>
-        <div class="container">
-            <div class="logo">
-                <img src="../assets/images/logo.png" type="image/png" class="logo-img">
-                <h1>Vibefind</h1>
-            </div>
-            <nav>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="events.html">Events</a></li>
-                    <li><a href="create-event.html">Create Event</a></li>
-                    <li><a href="my-events.html">My Events</a></li>
-                    <li><a href="about.html">About Us</a></li>
-                    <li><a href="contact.html" class="active">Contact</a></li>
-                </ul>
-            </nav>
-            <div class="auth-buttons">
-                <div class="profile-dropdown">
-                    <img src="../assets/images/default-profile.png" alt="Profile" id="profile-image">
-                    <div class="dropdown-content">
-                        <a href="profile.html"><i class="fas fa-user"></i> My Profile</a>
-                        <a href="wishlist.html"><i class="fas fa-heart"></i> Wishlist</a>
-                        <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                    </div>
-                </div>
-                <button id="login-btn" class="btn-secondary">Login</button>
-                <button id="signup-btn" class="btn-primary">Sign Up</button>
-            </div>
-        </div>
-    </header>
+<body class="with-fixed-header">
+    <div id="site-header"></div>
+    <script src="../js/include-header.js"></script>
 
     <main>
         <section class="hero-banner">
@@ -268,6 +240,20 @@
             <p>Already have an account? <a href="#" id="switch-to-login">Login</a></p>
         </div>
     </div>
+
+    <!-- Load local emailjs config if present (copy emailjs-config.example.js -> emailjs-config.js and edit) -->
+    <script>
+        (function(){
+            var s = document.createElement('script');
+            s.src = './emailjs-config.js';
+            s.async = false; // ensure config is set before contact.js runs
+            s.onerror = function(){
+                // no local config found — EmailJS will not be used unless window.EMAILJS_CONFIG is set elsewhere
+                console.info('emailjs-config.js not found (this file is git-ignored). Using server fallback or inline config if provided.');
+            };
+            document.head.appendChild(s);
+        })();
+    </script>
 
     <script src="../js/contact.js"></script>
 </body>

@@ -1,6 +1,4 @@
-// DOM Elements
-const loginBtn = document.getElementById('login-btn');
-const signupBtn = document.getElementById('signup-btn');
+// Header elements are injected dynamically; header interactions are bound in include-header.js
 const loginModal = document.getElementById('login-modal');
 const signupModal = document.getElementById('signup-modal');
 const closeButtons = document.querySelectorAll('.close');
@@ -9,9 +7,6 @@ const switchToLogin = document.getElementById('switch-to-login');
 const loginForm = document.getElementById('login-form');
 const signupForm = document.getElementById('signup-form');
 const contactForm = document.getElementById('contact-form');
-const logoutBtn = document.getElementById('logout-btn');
-const profileDropdown = document.querySelector('.profile-dropdown');
-const authButtons = document.querySelectorAll('#login-btn, #signup-btn');
 const faqItems = document.querySelectorAll('.faq-item');
 
 // CAPTCHA elements
@@ -137,28 +132,93 @@ if (contactForm) {
         const subject = document.getElementById('subject').value;
         const message = document.getElementById('message').value;
         
-        // In a real application, you would send this data to a server
-        // For now, we'll just display a success message
-        
-        showNotification('Your message has been sent! We\'ll get back to you soon.');
-        contactForm.reset();
+        // Helper: send via server POST (fallback)
+        const sendViaServer = () => {
+            return fetch((window.FEEDBACK_ENDPOINT || 'http://localhost:3001') + '/send-feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, subject, message })
+            })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Failed to send feedback');
+                }
+                return res.json();
+            });
+        };
+
+        // If EmailJS config is provided on window, prefer EmailJS (client-side, no server required)
+        // window.EMAILJS_CONFIG should be set in HTML before this script loads, e.g.:
+        // <script>window.EMAILJS_CONFIG = { serviceId: 'service_xxx', templateId: 'template_xxx', publicKey: 'your_public_key' };</script>
+        const emailJsCfg = window.EMAILJS_CONFIG;
+        if (emailJsCfg && emailJsCfg.serviceId && emailJsCfg.templateId && emailJsCfg.publicKey) {
+            // Load EmailJS SDK dynamically if needed
+            const ensureEmailJSSDK = () => {
+                if (window.emailjs && typeof window.emailjs.send === 'function') return Promise.resolve();
+                return new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.emailjs.com/dist/email.min.js';
+                    s.onload = () => {
+                        if (window.emailjs && typeof window.emailjs.init === 'function') {
+                            window.emailjs.init(emailJsCfg.publicKey);
+                            resolve();
+                        } else {
+                            reject(new Error('EmailJS SDK failed to load'));
+                        }
+                    };
+                    s.onerror = () => reject(new Error('Failed to load EmailJS SDK'));
+                    document.head.appendChild(s);
+                });
+            };
+
+            ensureEmailJSSDK()
+            .then(() => {
+                const templateParams = {
+                    from_name: name,
+                    from_email: email,
+                    subject: subject,
+                    message: message
+                };
+
+                return window.emailjs.send(emailJsCfg.serviceId, emailJsCfg.templateId, templateParams);
+            })
+            .then(() => {
+                showNotification('Your message has been sent! We\'ll get back to you soon.');
+                contactForm.reset();
+            })
+            .catch(err => {
+                console.error('EmailJS send error:', err);
+                // Fallback to server POST
+                sendViaServer()
+                .then(() => {
+                    showNotification('Your message has been sent via fallback server.');
+                    contactForm.reset();
+                })
+                .catch((err2) => {
+                    console.error('Fallback send error:', err2);
+                    showNotification('Unable to send message right now. Please try again later.');
+                });
+            });
+
+            return;
+        }
+
+        // Otherwise, use the server POST
+        sendViaServer()
+        .then(() => {
+            showNotification('Your message has been sent! We\'ll get back to you soon.');
+            contactForm.reset();
+        })
+        .catch((err) => {
+            console.error('Feedback send error:', err);
+            showNotification('Unable to send message right now. Please try again later.');
+            console.info('If you want to receive emails, either configure EmailJS via window.EMAILJS_CONFIG or run the feedback server in /server and set SMTP env vars. See server/.env.example');
+        });
     });
 }
 
-// Login button click
-if (loginBtn) {
-    loginBtn.addEventListener('click', () => {
-        openModal(loginModal);
-    });
-}
-
-// Signup button click
-if (signupBtn) {
-    signupBtn.addEventListener('click', () => {
-        openModal(signupModal);
-        generateCaptcha();
-    });
-}
+// Header login/signup buttons are handled by include-header.js after the header is injected.
 
 // Close buttons
 closeButtons.forEach(button => {
@@ -289,16 +349,7 @@ if (signupForm) {
     });
 }
 
-// Logout button click
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        localStorage.removeItem('currentUser');
-        checkAuthStatus();
-        showNotification('Logged out successfully!');
-        window.location.href = 'index.html';
-    });
-}
+// Logout is handled centrally in include-header.js
 
 // Add CSS for notifications
 const style = document.createElement('style');

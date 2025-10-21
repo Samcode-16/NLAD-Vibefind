@@ -1,6 +1,5 @@
-// DOM Elements
-const loginBtn = document.getElementById("login-btn");
-const signupBtn = document.getElementById("signup-btn");
+// Header elements are injected dynamically; header interactions are bound in include-header.js
+// Page-level helper elements (modals/forms) will be queried where needed.
 const loginModal = document.getElementById("login-modal");
 const signupModal = document.getElementById("signup-modal");
 const closeButtons = document.querySelectorAll(".close");
@@ -8,9 +7,6 @@ const switchToSignup = document.getElementById("switch-to-signup");
 const switchToLogin = document.getElementById("switch-to-login");
 const loginForm = document.getElementById("login-form");
 const signupForm = document.getElementById("signup-form");
-const logoutBtn = document.getElementById("logout-btn");
-const profileDropdown = document.querySelector(".profile-dropdown");
-const authButtons = document.querySelectorAll("#login-btn, #signup-btn");
 
 // Create Event page specific elements
 const createEventForm = document.getElementById("create-event-form");
@@ -72,14 +68,17 @@ function generateCaptcha() {
 // Check if user is logged in
 function checkAuthStatus() {
   const user = JSON.parse(localStorage.getItem("currentUser"));
+  const authButtons = document.querySelectorAll('#login-btn, #signup-btn');
+  const profileDropdown = document.querySelector('.profile-dropdown');
+
   if (user) {
     // User is logged in
-    authButtons.forEach((btn) => (btn.style.display = "none"));
-    profileDropdown.style.display = "block";
+    if (authButtons && authButtons.length) authButtons.forEach((btn) => (btn.style.display = "none"));
+    if (profileDropdown) profileDropdown.style.display = "block";
 
     // Set profile image if exists
     const profileImage = document.getElementById("profile-image");
-    if (user.profileImage) {
+    if (profileImage && user.profileImage) {
       profileImage.src = user.profileImage;
     }
 
@@ -90,8 +89,8 @@ function checkAuthStatus() {
     }
   } else {
     // User is not logged in
-    authButtons.forEach((btn) => (btn.style.display = "inline-block"));
-    profileDropdown.style.display = "none";
+    if (authButtons && authButtons.length) authButtons.forEach((btn) => (btn.style.display = "inline-block"));
+    if (profileDropdown) profileDropdown.style.display = "none";
 
     // Show login required message
     if (createEventForm && loginRequired) {
@@ -356,20 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// Login button click
-if (loginBtn) {
-  loginBtn.addEventListener("click", () => {
-    openModal(loginModal);
-  });
-}
-
-// Signup button click
-if (signupBtn) {
-  signupBtn.addEventListener("click", () => {
-    openModal(signupModal);
-    generateCaptcha();
-  });
-}
+// Header login/signup buttons are handled by include-header.js after the header is injected.
 
 // Login redirect button
 if (loginRedirectBtn) {
@@ -545,17 +531,7 @@ if (signupForm) {
   });
 }
 
-// Logout button click
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    localStorage.removeItem("currentUser");
-    checkAuthStatus();
-    showNotification("Logged out successfully!");
-    // Redirect to index.html
-    window.location.href = "index.html";
-  });
-}
+// Logout is handled centrally in include-header.js after header injection.
 
 // Add CSS for notifications if not already added
 if (!document.getElementById("notification-styles")) {
