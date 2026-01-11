@@ -33,6 +33,7 @@
       const wrapper = document.createElement("header");
       wrapper.innerHTML = html;
       placeholder.replaceWith(wrapper);
+      document.body.classList.add("with-fixed-header");
 
       // Set active link based on current file name
       const path = window.location.pathname;
@@ -91,6 +92,7 @@
     const signupBtn = headerEl.querySelector('#signup-btn');
     const logoutBtn = headerEl.querySelector('#logout-btn');
     const profileDropdown = headerEl.querySelector('.profile-dropdown');
+    const profileImageEl = profileDropdown ? profileDropdown.querySelector('#profile-image') : null;
 
     // Modal elements live in page body; query them
     const loginModal = document.getElementById('login-modal');
@@ -120,11 +122,13 @@
       if (user) {
         authButtons.forEach(b => b.style.display = 'none');
         if (profileDropdown) profileDropdown.style.display = 'block';
-        const profileImage = headerEl.querySelector('#profile-image');
-        if (profileImage && user.profileImage) profileImage.src = user.profileImage;
+        if (profileImageEl && user.profileImage) profileImageEl.src = user.profileImage;
       } else {
         authButtons.forEach(b => b.style.display = 'inline-block');
-        if (profileDropdown) profileDropdown.style.display = 'none';
+        if (profileDropdown) {
+          profileDropdown.style.display = 'none';
+          profileDropdown.classList.remove('open');
+        }
       }
     }
 
@@ -152,7 +156,39 @@
     // Wire header buttons
     if (loginBtn) loginBtn.addEventListener('click', () => openModal(loginModal));
     if (signupBtn) signupBtn.addEventListener('click', () => { openModal(signupModal); generateCaptcha(); });
-    if (logoutBtn) logoutBtn.addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('currentUser'); checkAuthStatus(); showNotification('Logged out successfully!'); window.location.href = 'index.html'; });
+    if (logoutBtn) logoutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('currentUser');
+      checkAuthStatus();
+      try {
+        window.dispatchEvent(new CustomEvent('authStatusChanged', { detail: { status: 'loggedOut' } }));
+      } catch (eventErr) {
+        console.warn('Could not dispatch authStatusChanged on logout', eventErr);
+      }
+      showNotification('Logged out successfully!');
+      window.location.href = 'index.html';
+    });
+
+    if (profileImageEl && profileDropdown) {
+      profileImageEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const willOpen = !profileDropdown.classList.contains('open');
+        document.querySelectorAll('.profile-dropdown.open').forEach((openDropdown) => {
+          if (openDropdown !== profileDropdown) openDropdown.classList.remove('open');
+        });
+        if (willOpen) {
+          profileDropdown.classList.add('open');
+        } else {
+          profileDropdown.classList.remove('open');
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!profileDropdown.contains(e.target)) {
+          profileDropdown.classList.remove('open');
+        }
+      });
+    }
 
     // Close buttons in modals
     closeButtons.forEach(btn => {
@@ -181,6 +217,11 @@
           localStorage.setItem('currentUser', JSON.stringify(user));
           closeModal(loginModal);
           checkAuthStatus();
+          try {
+            window.dispatchEvent(new CustomEvent('authStatusChanged', { detail: { status: 'loggedIn' } }));
+          } catch (eventErr) {
+            console.warn('Could not dispatch authStatusChanged on login', eventErr);
+          }
           showNotification('Login successful!');
         } else {
           alert('Invalid email or password!');
@@ -207,6 +248,11 @@
         localStorage.setItem('currentUser', JSON.stringify(newUser));
         closeModal(signupModal);
         checkAuthStatus();
+        try {
+          window.dispatchEvent(new CustomEvent('authStatusChanged', { detail: { status: 'signedUp' } }));
+        } catch (eventErr) {
+          console.warn('Could not dispatch authStatusChanged on signup', eventErr);
+        }
         showNotification('Account created successfully!');
       });
     }

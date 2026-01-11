@@ -291,6 +291,24 @@ function submitEventForm(e) {
       // Update user in localStorage
       localStorage.setItem("currentUser", JSON.stringify(user));
 
+      try {
+        const users = JSON.parse(localStorage.getItem("users")) || [];
+        let userFound = false;
+        const updatedUsers = users.map((u) => {
+          if (u.id === user.id) {
+            userFound = true;
+            return { ...u, ...user };
+          }
+          return u;
+        });
+        if (!userFound) {
+          updatedUsers.push({ ...user });
+        }
+        localStorage.setItem("users", JSON.stringify(updatedUsers));
+      } catch (err) {
+        console.warn("Unable to sync created events back to users store", err);
+      }
+
       // Save event to localStorage
       const allEvents = JSON.parse(localStorage.getItem("events")) || [];
       allEvents.push(newEvent);

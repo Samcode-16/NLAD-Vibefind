@@ -21,30 +21,76 @@
 }
 
 .hero-banner {
-    background: linear-gradient(rgba(74, 111, 165, 0.8), rgba(74, 111, 165, 0.8)), url('../img/contact-banner.jpg');
-    background-size: cover;
-    background-position: center;
-    color: white;
-    padding: 4rem 0;
+    position: relative;
+    padding: clamp(3.5rem, 8vw, 5.5rem) clamp(1.5rem, 6vw, 4rem);
+    background: url('../assets/images/college-pic.avif') center/cover no-repeat;
+    color: #ffffff;
     text-align: center;
-    margin-bottom: 3rem;
+    border-radius: 24px;
+    margin-bottom: clamp(2.5rem, 6vw, 3.5rem);
+    overflow: hidden;
+    box-shadow: 0 26px 48px rgba(15, 31, 61, 0.2);
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-banner::before,
+.hero-banner::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.hero-banner::before {
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(12, 26, 53, 0.88), rgba(52, 89, 148, 0.72));
+}
+
+.hero-banner::after {
+    width: 320px;
+    height: 320px;
+    top: -140px;
+    right: -120px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0) 70%);
+}
+
+.hero-banner > * {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-banner .container,
+.hero-banner .hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 720px;
 }
 
 .hero-banner h1 {
-    font-size: 2.5rem;
+    font-size: clamp(2.4rem, 4.6vw, 3.1rem);
     margin-bottom: 1rem;
+    letter-spacing: -0.015em;
+    font-weight: 700;
 }
 
 .hero-banner p {
-    font-size: 1.2rem;
+    font-size: clamp(1.05rem, 2.1vw, 1.3rem);
     max-width: 700px;
-    margin: 0 auto;
-    opacity: 0.9;
+    margin: 0.75rem auto 0;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Section Header */
 .section-header {
     text-align: center;
+        font-size: 1.05rem; /* Added for mobile adjustments */
     margin-bottom: 3rem;
 }
 
@@ -243,5 +289,20 @@
 
     .form-row {
         flex-direction: column;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .hero-banner {
+        padding: 3.1rem 1.75rem;
+        margin-bottom: 2.25rem;
+    }
+
+    .hero-banner h1 {
+        font-size: 2.3rem;
+    }
+
+    .hero-banner p {
+        font-size: 1.05rem;
     }
 }

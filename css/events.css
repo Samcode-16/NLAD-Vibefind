@@ -22,29 +22,70 @@
 }
 
 .hero-banner {
-    background: linear-gradient(rgba(74, 111, 165, 0.7), rgba(74, 111, 165, 0.85)), url('../img/events-banner.jpg');
-    background-size: cover;
-    background-position: center;
-    color: white;
-    padding: 5rem 0;
-    margin-bottom: 2.5rem;
-    border-radius: 12px;
+    position: relative;
+    padding: clamp(3.5rem, 8vw, 6rem) clamp(1.5rem, 6vw, 4rem);
+    background: url('../img/events-banner.jpg') center/cover no-repeat;
+    color: #ffffff;
+    border-radius: 24px;
+    margin-bottom: clamp(2.5rem, 6vw, 3.5rem);
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(15, 31, 61, 0.22);
+    isolation: isolate;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hero-banner::before,
+.hero-banner::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    z-index: 0;
+}
+
+.hero-banner::before {
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(130deg, rgba(10, 25, 50, 0.88), rgba(74, 111, 165, 0.72));
+}
+
+.hero-banner::after {
+    width: 360px;
+    height: 360px;
+    bottom: -160px;
+    left: -120px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.21) 0%, rgba(255, 255, 255, 0) 68%);
+}
+
+.hero-banner > * {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-banner .hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 720px;
 }
 
 .hero-banner h1 {
-    font-size: 2.8rem;
-    margin-bottom: 1.2rem;
+    font-size: clamp(2.6rem, 5vw, 3.4rem);
+    margin-bottom: 1.1rem;
+    letter-spacing: -0.02em;
     font-weight: 700;
-    text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .hero-banner p {
-    font-size: 1.3rem;
-    opacity: 0.95;
-    max-width: 700px;
-    margin: 0 auto;
+    font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+    opacity: 0.9;
+    max-width: 720px;
+    margin: 0.75rem auto 0;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Filters Section */
@@ -673,16 +714,16 @@
 
 @media screen and (max-width: 768px) {
     .hero-banner {
-        padding: 3.5rem 0;
-        margin-bottom: 2rem;
+        padding: 3.1rem 1.75rem;
+        margin-bottom: 2.25rem;
     }
     
     .hero-banner h1 {
-        font-size: 2.2rem;
+        font-size: 2.35rem;
     }
     
     .hero-banner p {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
     }
     
     .filter-row {

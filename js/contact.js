@@ -34,34 +34,38 @@ function generateCaptcha() {
 // Check if user is logged in
 function checkAuthStatus() {
     const user = JSON.parse(localStorage.getItem('currentUser'));
+    const authButtons = document.querySelectorAll('header #login-btn, header #signup-btn');
+    const profileDropdown = document.querySelector('header .profile-dropdown');
+
     if (user) {
-        // User is logged in
         authButtons.forEach(btn => btn.style.display = 'none');
-        profileDropdown.style.display = 'block';
-        
-        // Set profile image if exists
+        if (profileDropdown) {
+            profileDropdown.style.display = 'block';
+        }
+
         const profileImage = document.getElementById('profile-image');
-        if (user.profileImage) {
+        if (profileImage && user.profileImage) {
             profileImage.src = user.profileImage;
         }
-        
-        // Pre-fill contact form if available
-        if (contactForm) {
-            const nameInput = document.getElementById('name');
-            const emailInput = document.getElementById('email');
-            
-            if (nameInput && user.name) {
-                nameInput.value = user.name;
-            }
-            
-            if (emailInput && user.email) {
-                emailInput.value = user.email;
-            }
-        }
     } else {
-        // User is not logged in
         authButtons.forEach(btn => btn.style.display = 'inline-block');
-        profileDropdown.style.display = 'none';
+        if (profileDropdown) {
+            profileDropdown.style.display = 'none';
+            profileDropdown.classList.remove('open');
+        }
+    }
+
+    if (contactForm) {
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+
+        if (nameInput) {
+            nameInput.value = user && user.name ? user.name : '';
+        }
+
+        if (emailInput) {
+            emailInput.value = user && user.email ? user.email : '';
+        }
     }
 }
 
@@ -120,6 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
             item.classList.toggle('active');
         });
     });
+});
+
+window.addEventListener('authStatusChanged', () => {
+    checkAuthStatus();
+});
+
+window.addEventListener('headerLoaded', () => {
+    checkAuthStatus();
 });
 
 // Contact form submit

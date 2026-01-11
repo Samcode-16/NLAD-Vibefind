@@ -53,82 +53,54 @@ function generateCaptcha() {
 // Check if user is logged in and load appropriate content
 function checkAuthStatus() {
   const user = JSON.parse(localStorage.getItem("currentUser"));
+
   if (user) {
-    // User is logged in
-    if (authButtons) {
-      authButtons.forEach((btn) => (btn.style.display = "none"));
-    }
-    if (profileDropdown) {
-      profileDropdown.style.display = "block";
-    }
-
-    // Set profile image if exists
-    const profileImage = document.getElementById("profile-image");
-    if (profileImage && user.profileImage) {
-      profileImage.src = user.profileImage;
-    }
-
-    // Show my events section
-    if (loginRequired && myEventsSection) {
-      loginRequired.style.display = "none";
-      myEventsSection.style.display = "block";
-
-      // Load user's events
-      loadUserEvents();
-    }
+    if (loginRequired) loginRequired.style.display = "none";
+    if (myEventsSection) myEventsSection.style.display = "block";
+    loadUserEvents(user);
   } else {
-    // User is not logged in
-    if (authButtons) {
-      authButtons.forEach((btn) => (btn.style.display = "inline-block"));
-    }
-    if (profileDropdown) {
-      profileDropdown.style.display = "none";
-    }
-
-    // Show login required message
-    if (loginRequired && myEventsSection) {
-      loginRequired.style.display = "block";
-      myEventsSection.style.display = "none";
-    }
+    if (loginRequired) loginRequired.style.display = "block";
+    if (myEventsSection) myEventsSection.style.display = "none";
+    if (myEventsContainer) myEventsContainer.innerHTML = "";
+    if (noEvents) noEvents.style.display = "none";
   }
 }
 
 // Load events created by the current user
-function loadUserEvents() {
-  const user = JSON.parse(localStorage.getItem("currentUser"));
-  if (!user || !user.createdEvents || user.createdEvents.length === 0) {
-    // User has no events
-    if (noEvents && myEventsContainer) {
-      noEvents.style.display = "block";
-      myEventsContainer.innerHTML = "";
-    }
-    return;
-  }
+function loadUserEvents(user) {
+  if (!user || !myEventsContainer) return;
 
-  // Get all events from localStorage
+  const createdIds = Array.isArray(user.createdEvents)
+    ? user.createdEvents
+    : [];
+  const numericCreatedIdSet = new Set(
+    createdIds.map((id) => {
+      const parsed = Number(id);
+      return Number.isNaN(parsed) ? null : parsed;
+    }).filter((val) => val !== null)
+  );
+  const stringCreatedIdSet = new Set(createdIds.map((id) => String(id)));
+
   const allEvents = JSON.parse(localStorage.getItem("events")) || [];
 
-  // Filter events created by the user
-  const userEvents = allEvents.filter(
-    (event) =>
-      user.createdEvents.includes(parseInt(event.id)) ||
-      user.createdEvents.includes(event.id)
-  );
+  const userEvents = allEvents.filter((event) => {
+    const eventIdNum = Number(event.id);
+    const eventIdStr = String(event.id);
+    return (
+      numericCreatedIdSet.has(eventIdNum) ||
+      stringCreatedIdSet.has(eventIdStr) ||
+      String(event.createdBy) === String(user.id)
+    );
+  });
 
-  if (userEvents.length === 0) {
-    // User has no events
-    if (noEvents && myEventsContainer) {
-      noEvents.style.display = "block";
-      myEventsContainer.innerHTML = "";
-    }
+  if (!userEvents.length) {
+    if (noEvents) noEvents.style.display = "block";
+    myEventsContainer.innerHTML = "";
     return;
   }
 
-  // User has events, display them
-  if (noEvents && myEventsContainer) {
-    noEvents.style.display = "none";
-    displayUserEvents(userEvents);
-  }
+  if (noEvents) noEvents.style.display = "none";
+  displayUserEvents(userEvents);
 }
 
 // Display user's events
@@ -257,16 +229,41 @@ function confirmDeleteEvent() {
   // Remove the event from user's createdEvents array
   const user = JSON.parse(localStorage.getItem("currentUser"));
   if (user && user.createdEvents) {
-    const eventIdNum = parseInt(currentEvent.id);
+    const eventIdStr = String(currentEvent.id);
     user.createdEvents = user.createdEvents.filter(
-      (id) => id !== eventIdNum && id !== currentEvent.id
+      (id) => String(id) !== eventIdStr
     );
     localStorage.setItem("currentUser", JSON.stringify(user));
+
+    try {
+      const users = JSON.parse(localStorage.getItem("users")) || [];
+      let userFound = false;
+      const updatedUsers = users.map((u) => {
+        if (u.id === user.id) {
+          userFound = true;
+          return { ...u, ...user };
+        }
+        return u;
+      });
+      if (!userFound) {
+        updatedUsers.push({ ...user });
+      }
+      localStorage.setItem("users", JSON.stringify(updatedUsers));
+    } catch (err) {
+      console.warn("Unable to sync deleted event back to users store", err);
+    }
   }
 
   // Close modal and reload events
   closeModal(deleteConfirmModal);
-  loadUserEvents();
+  const refreshedUser = JSON.parse(localStorage.getItem("currentUser"));
+  if (refreshedUser) {
+    loadUserEvents(refreshedUser);
+  } else {
+    checkAuthStatus();
+  }
+
+  currentEvent = null;
 
   // Show notification
   showNotification("Event deleted successfully!");
@@ -314,6 +311,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (captchaText) {
     generateCaptcha();
+  }
+});
+
+window.addEventListener("authStatusChanged", () => {
+  checkAuthStatus();
+});
+
+window.addEventListener("headerLoaded", () => {
+  checkAuthStatus();
+});
+
+window.addEventListener("storage", (event) => {
+  if (event.key === "currentUser" || event.key === "events") {
+    checkAuthStatus();
   }
 });
 
@@ -461,10 +472,15 @@ if (editEventForm) {
 
     // Close modal and reload events
     closeModal(editEventModal);
-    loadUserEvents();
+    const refreshedUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (refreshedUser) {
+      loadUserEvents(refreshedUser);
+    }
 
     // Show notification
     showNotification("Event updated successfully!");
+
+    currentEvent = null;
   });
 }
 
